@@ -1,7 +1,5 @@
-// Adicione no início do script.js
-const API_BASE_URL = 'http://localhost:3000/api'; // Mude para a URL do seu backend se for diferente
+const API_BASE_URL = 'http://localhost:3000/api';
 
-// Função para fazer requisições autenticadas (globalmente disponível)
 async function authenticatedFetch(url, options = {}) {
     const token = localStorage.getItem('jwtToken');
     const headers = {
@@ -13,41 +11,37 @@ async function authenticatedFetch(url, options = {}) {
     }
 
     const response = await fetch(url, { ...options, headers });
-    // Se a sessão expirou ou não está autorizado, redireciona para o login
+    
     if (response.status === 401 || response.status === 403) {
         showToast('Sessão expirada ou não autorizado. Faça login novamente.', true);
         localStorage.removeItem('jwtToken');
         localStorage.removeItem('username');
-        // Usar setTimeout para dar tempo ao toast aparecer antes do redirecionamento
+        
         setTimeout(() => {
-            window.location.href = 'index.html'; 
-        }, 1000); 
-        throw new Error('Não autorizado'); // Lança erro para interromper a execução da função
+            window.location.href = 'index.html';
+        }, 1000);
+        throw new Error('Não autorizado');
     }
     return response;
 }
 
-// Variáveis e funções comuns (disponíveis para todas as seções do script)
 const toast = document.getElementById('toast');
 const logoutBtn = document.getElementById('logout-btn');
 
-// Função para mostrar notificações toast (globalmente disponível)
 function showToast(message, isError = false) {
-    if (!toast) return; // Garante que o elemento toast existe na página
+    if (!toast) return;
     toast.textContent = message;
-    toast.style.backgroundColor = isError ? '#e74c3c' : '#2ecc71'; // Vermelho para erro, verde para sucesso
+    toast.style.backgroundColor = isError ? '#e74c3c' : '#2ecc71';
     toast.className = 'toast show';
-    
+
     setTimeout(() => {
         toast.className = toast.className.replace('show', '');
     }, 3000);
 }
 
-// Configura o botão de logout (se presente na página)
 function setupLogout() {
-    if (logoutBtn) { // Verifica se o botão existe antes de adicionar o listener
+    if (logoutBtn) {
         logoutBtn.addEventListener('click', function() {
-            // Usar um modal personalizado em vez de confirm()
             showConfirmationModal('Deseja realmente sair?', () => {
                 localStorage.removeItem('jwtToken');
                 localStorage.removeItem('username');
@@ -57,9 +51,7 @@ function setupLogout() {
     }
 }
 
-// Função para exibir um modal de confirmação (substituto para alert/confirm)
 function showConfirmationModal(message, onConfirm) {
-    // Cria os elementos do modal dinamicamente
     const modalHtml = `
         <div id="customConfirmModal" style="
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -89,30 +81,23 @@ function showConfirmationModal(message, onConfirm) {
     };
 }
 
-
-// A função principal que executa quando o DOM é completamente carregado
 document.addEventListener('DOMContentLoaded', function() {
-    // Carregar nome do usuário (se existir) para o cabeçalho do dashboard
     const userGreeting = document.getElementById('user-greeting');
     if (userGreeting) {
-        const username = localStorage.getItem('username'); 
+        const username = localStorage.getItem('username');
         if (username) {
             userGreeting.textContent = `Olá, ${username}!`;
         } else {
             userGreeting.textContent = 'Olá, Visitante!';
-            // Opcional: Redirecionar para index.html se não houver token/username
-            // window.location.href = 'index.html'; 
         }
     }
 
-    setupLogout(); // Configura o logout para todas as páginas que possuem o botão
+    setupLogout();
 
-    // --- Lógica Específica para a Página de Login (index.html) ---
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
 
-    if (loginForm || registerForm) { // Verifica se estamos na página de autenticação
-        // Lógica para as abas de Login/Registro (se o index.html usar tabs)
+    if (loginForm || registerForm) {
         const tabButtons = document.querySelectorAll('.tab-button');
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -129,10 +114,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Lida com o envio do formulário de Login
         if (loginForm) {
             loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault(); 
+                e.preventDefault();
                 const email = document.getElementById('loginEmail').value;
                 const password = document.getElementById('loginPassword').value;
 
@@ -153,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         localStorage.setItem('jwtToken', data.token);
                         localStorage.setItem('username', data.user.username);
                         showToast(data.message);
-                        window.location.href = 'sleep-tracker.html'; // Redireciona para o dashboard
+                        window.location.href = 'sleep-tracker.html';
                     } else {
                         showToast(data.message || 'Erro no login. Verifique suas credenciais.', true);
                     }
@@ -164,10 +148,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Lida com o envio do formulário de Cadastro
         if (registerForm) {
             registerForm.addEventListener('submit', async function(e) {
-                e.preventDefault(); 
+                e.preventDefault();
                 const username = document.getElementById('registerUsername').value;
                 const email = document.getElementById('registerEmail').value;
                 const password = document.getElementById('registerPassword').value;
@@ -193,12 +176,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (response.ok) {
                         showToast(data.message);
                         setTimeout(() => {
-                            // Após cadastro, alterna para a aba de login para o usuário prosseguir
                             const loginTabButton = document.querySelector('.tab-button[data-tab="login"]');
                             if (loginTabButton) {
                                 loginTabButton.click();
                             }
-                            registerForm.reset(); 
+                            registerForm.reset();
                         }, 1500);
                     } else {
                         showToast(data.message || 'Erro no cadastro. Tente novamente.', true);
@@ -211,10 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-
-    // --- Funções Comuns para Datepickers e Estrelas ---
     function initializeDatepickers() {
-        // Verifica se $.fn.datepicker está disponível (jQuery e datepicker plugin)
         if ($.fn.datepicker) {
             $('.datepicker').datepicker({
                 format: 'dd/mm/yyyy',
@@ -254,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeDatepickers();
         $('#sleepDate').datepicker('setDate', new Date());
         setupRatingStars();
-        
+
         const bedtimeInput = document.getElementById('bedtime');
         const wakeupInput = document.getElementById('wakeup');
         const durationInput = document.getElementById('sleepDuration');
@@ -267,33 +246,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (wakeup <= bedtime) {
                     wakeup.setDate(wakeup.getDate() + 1);
                 }
-                
+
                 const diffMs = wakeup - bedtime;
                 const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
                 const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                
+
                 durationInput.value = `${diffHrs}h ${diffMins}m`;
             } else {
                 durationInput.value = '';
             }
         }
-        
+
         bedtimeInput.addEventListener('change', calculateDuration);
         wakeupInput.addEventListener('change', calculateDuration);
         calculateDuration();
 
         const sleepForm = document.getElementById('sleepForm');
-        
+
         sleepForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const sleepDate = $('#sleepDate').datepicker('getDate');
             const bedtime = bedtimeInput.value;
             const wakeup = wakeupInput.value;
             const sleepQuality = document.getElementById('sleepQuality').value;
             const notes = document.getElementById('notes').value;
             const duration = durationInput.value;
-            
+
             if (!sleepDate || !bedtime || !wakeup || sleepQuality === '0') {
                 showToast('Por favor, preencha todos os campos obrigatórios.', true);
                 return;
@@ -303,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const response = await authenticatedFetch(`${API_BASE_URL}/sleep`, {
                     method: 'POST',
                     body: JSON.stringify({
-                        sleepDate: sleepDate.toISOString(), 
+                        sleepDate: sleepDate.toISOString(),
                         bedtime,
                         wakeup,
                         duration,
@@ -349,10 +328,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!recordsList) return;
 
             try {
-                const response = await authenticatedFetch(`${API_BASE_URL}/sleep?limit=5`); 
+                const response = await authenticatedFetch(`${API_BASE_URL}/sleep?limit=5`);
                 const records = await response.json();
 
-                recordsList.innerHTML = ''; 
+                recordsList.innerHTML = '';
                 records.forEach(record => {
                     const recordDate = new Date(record.sleepDate).toLocaleDateString('pt-BR');
                     addRecentRecordToDashboard(recordDate, record.bedtime, record.wakeup, record.duration, record.quality);
@@ -365,18 +344,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function addRecentRecordToDashboard(date, bedtime, wakeup, duration, quality) {
             const recordsList = document.getElementById('recordsList');
-            if (!recordsList) return; 
+            if (!recordsList) return;
 
             const recordCard = document.createElement('div');
             recordCard.className = 'record-item';
-            
+
             let starsHtml = '';
             for (let i = 1; i <= 5; i++) {
-                starsHtml += i <= quality ? 
-                    '<i class="fas fa-star" style="color: #ffc107;"></i>' : 
+                starsHtml += i <= quality ?
+                    '<i class="fas fa-star" style="color: #ffc107;"></i>' :
                     '<i class="far fa-star" style="color: #ffc107;"></i>';
             }
-            
+
             recordCard.innerHTML = `
                 <div>
                     <div class="record-date">${date}</div>
@@ -402,14 +381,14 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeDatepickers();
         $('#startDate').datepicker('setDate', '-14d');
         $('#endDate').datepicker('setDate', new Date());
-        
+
         let currentSleepData = [];
         let durationChartInstance, qualityChartInstance;
 
         function initializeCharts() {
             const durationCtx = document.getElementById('durationChart')?.getContext('2d');
             const qualityCtx = document.getElementById('qualityChart')?.getContext('2d');
-            
+
             if (!durationCtx || !qualityCtx) return;
 
             if (durationChartInstance) durationChartInstance.destroy();
@@ -482,18 +461,18 @@ document.addEventListener('DOMContentLoaded', function() {
         function populateTable(data) {
             const tableBody = document.querySelector('#sleepTable tbody');
             if (!tableBody) return;
-            
+
             tableBody.innerHTML = '';
             data.forEach(item => {
                 const row = document.createElement('tr');
-                
+
                 let stars = '';
                 for (let i = 1; i <= 5; i++) {
-                    stars += i <= item.quality ? 
-                        '<i class="fas fa-star" style="color: #ffc107;"></i>' : 
+                    stars += i <= item.quality ?
+                        '<i class="fas fa-star" style="color: #ffc107;"></i>' :
                         '<i class="far fa-star" style="color: #ffc107;"></i>';
                 }
-                
+
                 row.innerHTML = `
                     <td>${new Date(item.sleepDate).toLocaleDateString('pt-BR')}</td>
                     <td>${item.bedtime}</td>
@@ -509,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </button>
                     </td>
                 `;
-                
+
                 tableBody.appendChild(row);
             });
 
@@ -519,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     showDetails(id);
                 });
             });
-            
+
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
@@ -529,7 +508,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         async function showDetails(id) {
-            
+
             try {
                 const response = await authenticatedFetch(`${API_BASE_URL}/sleep/${id}`);
                 const record = await response.json();
@@ -538,14 +517,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                // --- INÍCIO DO CÓDIGO DA IA ---
                 const getDicasIA = async (dadosDoSono) => {
                     try {
                         const response = await authenticatedFetch(`${API_BASE_URL}/sleep/dicas`, {
                             method: 'POST',
                             body: JSON.stringify(dadosDoSono),
                         });
-                        
+
                         if (!response.ok) {
                             throw new Error('Erro ao obter dicas da IA.');
                         }
@@ -557,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         return "Não foi possível gerar dicas de sono no momento. Tente novamente mais tarde.";
                     }
                 };
-                
+
                 const dicas = await getDicasIA({
                     duration: record.duration,
                     quality: record.quality,
@@ -567,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('modalBedtime').textContent = record.bedtime;
                 document.getElementById('modalWakeup').textContent = record.wakeup;
                 document.getElementById('modalDuration').textContent = record.duration;
-                
+
                 const starsContainer = document.getElementById('modalQuality');
                 starsContainer.innerHTML = '';
                 for (let i = 1; i <= 5; i++) {
@@ -576,27 +554,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     star.style.color = '#ffc107';
                     starsContainer.appendChild(star);
                 }
-                
+
                 document.getElementById('modalNotes').textContent = record.notes || 'Nenhuma observação registrada.';
-                
+
                 const tipsContainer = document.getElementById('modalTipsContainer');
                 if (tipsContainer) {
                     tipsContainer.innerHTML = `<h5 style="margin-top: 20px;">Dicas da IA:</h5><p>${dicas.replace(/\n/g, '<br>')}</p>`;
                 }
-                
+
                 document.getElementById('editBtn').onclick = function() {
 
                     showToast(`Funcionalidade de Editar para ID: ${id} será implementada em breve!`, false);
                     closeModal();
                 };
-                
+
                 document.getElementById('deleteBtn').onclick = async function() {
                     showConfirmationModal(`Tem certeza que deseja excluir o registro de ${new Date(record.sleepDate).toLocaleDateString('pt-BR')}?`, async () => {
                         await deleteRecord(id);
                         closeModal();
                     });
                 };
-                
+
                 document.getElementById('detailModal').style.display = 'block';
 
             } catch (error) {
@@ -636,7 +614,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 durationChartInstance.update();
             }
-            
+
             if (qualityChartInstance) {
                 qualityChartInstance.data.labels = currentSleepData.map(item => new Date(item.sleepDate).toLocaleDateString('pt-BR'));
                 qualityChartInstance.data.datasets[0].data = currentSleepData.map(item => item.quality);
@@ -701,17 +679,17 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('filterBtn')?.addEventListener('click', async function() {
             const startDate = $('#startDate').datepicker('getDate');
             const endDate = $('#endDate').datepicker('getDate');
-            
+
             if (!startDate || !endDate) {
                 showToast('Por favor, selecione ambas as datas para filtrar.', true);
                 return;
             }
-            
+
             if (startDate > endDate) {
                 showToast('A data inicial não pode ser maior que a data final.', true);
                 return;
             }
-            
+
             await fetchAndRenderSleepData(startDate, endDate);
             showToast(`Filtro aplicado - ${currentSleepData.length} registros encontrados.`);
         });
@@ -720,22 +698,22 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 let url = `${API_BASE_URL}/sleep`;
                 if (startDate && endDate) {
-                
+
                     url += `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
                 }
                 const response = await authenticatedFetch(url);
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     currentSleepData = data;
                     populateTable(currentSleepData);
-                    initializeCharts(); 
+                    initializeCharts();
                 } else {
                     showToast(data.message || 'Erro ao carregar dados de sono.', true);
                 }
             } catch (error) {
                 console.error('Erro ao buscar e renderizar dados de sono:', error);
-      
+
                 if (!error.message.includes('Não autorizado')) {
                     showToast('Erro de rede ou servidor ao carregar dados de sono.', true);
                 }
