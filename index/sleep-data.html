@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dados de Sono</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1><i class="fas fa-moon"></i> SleepTracker</h1>
+            </div>
+            <div class="header-right">
+                <span id="user-greeting">Olá, Usuário!</span>
+                <button id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </header>
+
+        <nav class="sidebar">
+            <ul>
+                <li><a href="sleep-tracker.html"><i class="fas fa-home"></i> Home</a></li>
+                <li class="active"><a href="sleep-data.html"><i class="fas fa-bed"></i> Meu Sono</a></li>
+                <li><a href="settings.html"><i class="fas fa-cog"></i> Configurações</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <div class="data-header">
+                <h2><i class="fas fa-chart-bar"></i> Visualização de Dados de Sono</h2>
+                <div class="date-filter">
+                    <div class="input-with-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                        <input type="text" id="startDate" class="datepicker" placeholder="Data inicial">
+                    </div>
+                    <span>até</span>
+                    <div class="input-with-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                        <input type="text" id="endDate" class="datepicker" placeholder="Data final">
+                    </div>
+                    <button id="filterBtn" class="btn-primary"><i class="fas fa-filter"></i> Filtrar</button>
+                </div>
+            </div>
+
+            <div class="data-container">
+                <div class="data-card summary-card">
+                    <h3><i class="fas fa-tachometer-alt"></i> Resumo do Período</h3>
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="avgDuration">7h 24m</div>
+                            <div class="stat-label">Duração Média</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="avgQuality">3.8</div>
+                            <div class="stat-label">Qualidade Média</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="bestDuration">9h 12m</div>
+                            <div class="stat-label">Melhor Duração</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="consistency">82%</div>
+                            <div class="stat-label">Consistência</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-card chart-card">
+                    <h3><i class="fas fa-chart-line"></i> Duração do Sono (últimos 14 dias)</h3>
+                    <canvas id="durationChart"></canvas>
+                </div>
+
+                <div class="data-card chart-card">
+                    <h3><i class="fas fa-star"></i> Qualidade do Sono (últimos 14 dias)</h3>
+                    <canvas id="qualityChart"></canvas>
+                </div>
+
+                <div class="data-card full-width">
+                    <h3><i class="fas fa-table"></i> Registros Detalhados</h3>
+                    <div class="table-container">
+                        <table id="sleepTable">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Dormiu</th>
+                                    <th>Acordou</th>
+                                    <th>Duração</th>
+                                    <th>Qualidade</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 id="modalDate">Detalhes do Sono - 25/03/2023</h3>
+            <div class="modal-body">
+                <div class="modal-row">
+                    <div class="modal-group">
+                        <label>Horário de Dormir</label>
+                        <div class="modal-value" id="modalBedtime">23:15</div>
+                    </div>
+                    <div class="modal-group">
+                        <label>Horário de Acordar</label>
+                        <div class="modal-value" id="modalWakeup">07:30</div>
+                    </div>
+                </div>
+                <div class="modal-row">
+                    <div class="modal-group">
+                        <label>Duração Total</label>
+                        <div class="modal-value" id="modalDuration">8h 15m</div>
+                    </div>
+                    <div class="modal-group">
+                        <label>Qualidade</label>
+                        <div class="modal-rating" id="modalQuality">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="far fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-group full-width">
+                    <label>Observações</label>
+                    <div class="modal-notes" id="modalNotes">Dormi bem, mas acordei uma vez para ir ao banheiro. Tive um sonho muito vívido que me fez acordar cansado.</div>
+                </div>
+                
+                <div id="modalTipsContainer" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                    </div>
+
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="editBtn"><i class="fas fa-edit"></i> Editar</button>
+                    <button class="btn-danger" id="deleteBtn"><i class="fas fa-trash-alt"></i> Excluir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.pt-BR.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Sono</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1><i class="fas fa-moon"></i> SleepTracker</h1>
+            </div>
+            <div class="header-right">
+                <span id="user-greeting">Olá, Usuário!</span>
+                <button id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </header>
+
+        <nav class="sidebar">
+            <ul>
+                <li class="active"><a href="sleep-tracker.html"><i class="fas fa-home"></i> home</a></li>
+                <li><a href="sleep-data.html"><i class="fas fa-bed"></i> Meu Sono</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Configurações</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <div class="sleep-form-container">
+                <h2><i class="fas fa-plus-circle"></i> Registrar Sono Manualmente</h2>
+                
+                <form id="sleepForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sleepDate">Data</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                                <input type="text" id="sleepDate" class="datepicker" placeholder="Selecione a data" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bedtime">Horário de Dormir</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-clock"></i>
+                                <input type="time" id="bedtime" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="wakeup">Horário de Acordar</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-bell"></i>
+                                <input type="time" id="wakeup" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sleepQuality">Qualidade do Sono</label>
+                            <div class="rating-stars">
+                                <i class="far fa-star" data-rating="1"></i>
+                                <i class="far fa-star" data-rating="2"></i>
+                                <i class="far fa-star" data-rating="3"></i>
+                                <i class="far fa-star" data-rating="4"></i>
+                                <i class="far fa-star" data-rating="5"></i>
+                                <input type="hidden" id="sleepQuality" value="0">
+                            </div>
+                            <div class="rating-labels">
+                                <span>Ruim</span>
+                                <span>Excelente</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sleepDuration">Duração (auto)</label>
+                            <input type="text" id="sleepDuration" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Observações</label>
+                        <textarea id="notes" placeholder="Como você se sentiu? Teve sonhos? Acordou durante a noite?"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Salvar Registro</button>
+                        <button type="button" id="cancelBtn" class="btn-secondary">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="recent-records">
+                <h3><i class="fas fa-history"></i> Registros Recentes</h3>
+                <div class="records-list" id="recordsList">
+                    <!-- Os registros serão inseridos aqui via JavaScript -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.pt-BR.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
