@@ -205,52 +205,88 @@ document.addEventListener('DOMContentLoaded', function() {
             console.warn("jQuery Datepicker não encontrado. Verifique se os scripts estão carregados.");
         }
     }
-
-    function setupRatingStars() {
+    
+    function setRating(rating) {
         const stars = document.querySelectorAll('.rating-stars i');
         const hiddenInput = document.getElementById('sleepQuality');
         if (!stars.length || !hiddenInput) return;
 
+        hiddenInput.value = rating;
+        stars.forEach(s => {
+            if (parseInt(s.getAttribute('data-rating')) <= rating) {
+                s.classList.remove('far');
+                s.classList.add('fas', 'active');
+            } else {
+                s.classList.remove('fas', 'active');
+                s.classList.add('far');
+            }
+        });
+    }
+
+    function setupRatingStars() {
+        const stars = document.querySelectorAll('.rating-stars i');
+        if (!stars.length) return;
+
         stars.forEach(star => {
             star.addEventListener('click', function() {
                 const rating = parseInt(this.getAttribute('data-rating'));
-                hiddenInput.value = rating;
-
-                stars.forEach(s => {
-                    if (parseInt(s.getAttribute('data-rating')) <= rating) {
-                        s.classList.remove('far');
-                        s.classList.add('fas', 'active');
-                    } else {
-                        s.classList.remove('fas', 'active');
-                        s.classList.add('far');
-                    }
-                });
+                setRating(rating);
             });
         });
     }
 
     if (document.getElementById('sleepForm')) {
         initializeDatepickers();
-        $('#sleepDate').datepicker('setDate', new Date());
         setupRatingStars();
 
         const bedtimeInput = document.getElementById('bedtime');
         const wakeupInput = document.getElementById('wakeup');
         const durationInput = document.getElementById('sleepDuration');
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const recordIdToEdit = urlParams.get('edit');
+        const isEditMode = recordIdToEdit !== null;
+
+        async function populateFormForEdit(id) {
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/sleep/${id}`);
+                if (!response.ok) throw new Error('Falha ao buscar dados do registro.');
+                const record = await response.json();
+
+                document.querySelector('.sleep-form-container h2').innerHTML = '<i class="fas fa-edit"></i> Editar Registro de Sono';
+                const submitButton = document.querySelector('#sleepForm button[type="submit"]');
+                submitButton.innerHTML = '<i class="fas fa-save"></i> Atualizar Registro';
+
+                $('#sleepDate').datepicker('setDate', new Date(record.sleepDate));
+                bedtimeInput.value = record.bedtime;
+                wakeupInput.value = record.wakeup;
+                document.getElementById('notes').value = record.notes;
+                setRating(record.quality);
+                
+                calculateDuration();
+
+            } catch (error) {
+                showToast('Erro ao carregar dados para edição.', true);
+                console.error(error);
+            }
+        }
+
+        if (isEditMode) {
+            populateFormForEdit(recordIdToEdit);
+        } else {
+            $('#sleepDate').datepicker('setDate', new Date());
+        }
+
         function calculateDuration() {
             if (bedtimeInput.value && wakeupInput.value) {
                 const bedtime = new Date(`2000-01-01T${bedtimeInput.value}:00`);
                 let wakeup = new Date(`2000-01-01T${wakeupInput.value}:00`);
-
                 if (wakeup <= bedtime) {
                     wakeup.setDate(wakeup.getDate() + 1);
                 }
-
                 const diffMs = wakeup - bedtime;
                 const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
                 const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
                 durationInput.value = `${diffHrs}h ${diffMins}m`;
             } else {
                 durationInput.value = '';
@@ -259,10 +295,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         bedtimeInput.addEventListener('change', calculateDuration);
         wakeupInput.addEventListener('change', calculateDuration);
-        calculateDuration();
-
+        
         const sleepForm = document.getElementById('sleepForm');
-
         sleepForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -278,23 +312,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            try {
-                const response = await authenticatedFetch(`${API_BASE_URL}/sleep`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        sleepDate: sleepDate.toISOString(),
-                        bedtime,
-                        wakeup,
-                        duration,
-                        quality: parseInt(sleepQuality),
-                        notes
-                    })
-                });
-                const data = await response.json();
+            const sleepDataPayload = {
+                sleepDate: sleepDate.toISOString(),
+                bedtime,
+                wakeup,
+                duration,
+                quality: parseInt(sleepQuality),
+                notes
+            };
 
+            try {
+                let response;
+                if (isEditMode) {
+                    response = await authenticatedFetch(`${API_BASE_URL}/sleep/${recordIdToEdit}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(sleepDataPayload)
+                    });
+                } else {
+                    response = await authenticatedFetch(`${API_BASE_URL}/sleep`, {
+                        method: 'POST',
+                        body: JSON.stringify(sleepDataPayload)
+                    });
+                }
+
+                const data = await response.json();
                 if (response.ok) {
-                    showToast(data.message);
-                    await fetchRecentRecords();
+                    if (isEditMode) {
+                        showToast('Registro atualizado com sucesso!');
+                        setTimeout(() => window.location.href = 'sleep-data.html', 1000);
+                    } else {
+                        showToast(data.message);
+                        fetchRecentRecords();
+
+                        sleepForm.reset();
+                        $('#sleepDate').datepicker('setDate', new Date());
+                        setRating(0);
+                        calculateDuration();
+                    }
                 } else {
                     showToast(data.message || 'Erro ao salvar registro de sono.', true);
                 }
@@ -302,35 +356,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Erro ao salvar registro de sono:', error);
                 showToast('Erro de rede ou servidor ao salvar registro de sono.', true);
             }
-            sleepForm.reset();
-            $('#sleepDate').datepicker('setDate', new Date());
-            document.getElementById('sleepQuality').value = '0';
-            document.querySelectorAll('.rating-stars i').forEach(star => {
-                star.classList.remove('fas', 'active');
-                star.classList.add('far');
-            });
-            calculateDuration();
         });
 
         document.getElementById('cancelBtn')?.addEventListener('click', function() {
-            sleepForm.reset();
-            $('#sleepDate').datepicker('setDate', new Date());
-            document.getElementById('sleepQuality').value = '0';
-            document.querySelectorAll('.rating-stars i').forEach(star => {
-                star.classList.remove('fas', 'active');
-                star.classList.add('far');
-            });
-            calculateDuration();
+            if (isEditMode) {
+                window.location.href = 'sleep-data.html';
+            } else {
+                sleepForm.reset();
+                $('#sleepDate').datepicker('setDate', new Date());
+                setRating(0);
+                calculateDuration();
+            }
         });
 
         async function fetchRecentRecords() {
             const recordsList = document.getElementById('recordsList');
             if (!recordsList) return;
-
             try {
                 const response = await authenticatedFetch(`${API_BASE_URL}/sleep?limit=5`);
                 const records = await response.json();
-
                 recordsList.innerHTML = '';
                 records.forEach(record => {
                     const recordDate = new Date(record.sleepDate).toLocaleDateString('pt-BR');
@@ -345,17 +389,14 @@ document.addEventListener('DOMContentLoaded', function() {
         function addRecentRecordToDashboard(date, bedtime, wakeup, duration, quality) {
             const recordsList = document.getElementById('recordsList');
             if (!recordsList) return;
-
             const recordCard = document.createElement('div');
             recordCard.className = 'record-item';
-
             let starsHtml = '';
             for (let i = 1; i <= 5; i++) {
                 starsHtml += i <= quality ?
                     '<i class="fas fa-star" style="color: #ffc107;"></i>' :
                     '<i class="far fa-star" style="color: #ffc107;"></i>';
             }
-
             recordCard.innerHTML = `
                 <div>
                     <div class="record-date">${date}</div>
@@ -366,15 +407,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="record-quality">${starsHtml}</span>
                 </div>
             `;
-
             recordsList.insertBefore(recordCard, recordsList.firstChild);
-
             if (recordsList.children.length > 5) {
                 recordsList.removeChild(recordsList.lastChild);
             }
         }
-
-        fetchRecentRecords();
+        if (!isEditMode) {
+            fetchRecentRecords();
+        }
     }
 
     if (document.getElementById('startDate')) {
@@ -383,16 +423,54 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#endDate').datepicker('setDate', new Date());
 
         let currentSleepData = [];
-        let durationChartInstance, qualityChartInstance;
+        let durationChartInstance, qualityChartInstance, regularityChartInstance;
+        
+        const durationToNumeric = (duration) => {
+            if (!duration || typeof duration !== 'string' || !duration.includes('h')) {
+                return null;
+            }
+            try {
+                const parts = duration.replace('m', '').trim().split('h ');
+                const hours = parseInt(parts[0], 10);
+                const minutes = parseInt(parts[1], 10) || 0;
+                if (isNaN(hours) || isNaN(minutes)) {
+                    return null;
+                }
+                return hours + (minutes / 60);
+            } catch (e) {
+                console.error("Erro ao processar a duração:", duration, e);
+                return null;
+            }
+        };
+        
+        const timeToNumeric = (time) => {
+            if (!time || typeof time !== 'string' || !time.includes(':')) {
+                return null;
+            }
+            const parts = time.split(':');
+            if (parts.length !== 2) return null;
+            const hours = parseInt(parts[0], 10);
+            const minutes = parseInt(parts[1], 10);
+            if (isNaN(hours) || isNaN(minutes)) {
+                return null;
+            }
+            let value = hours + minutes / 60;
+            if (value >= 0 && value < 12) {
+                value += 24;
+            }
+            return value;
+        };
 
         function initializeCharts() {
             const durationCtx = document.getElementById('durationChart')?.getContext('2d');
             const qualityCtx = document.getElementById('qualityChart')?.getContext('2d');
+            const regularityCtx = document.getElementById('regularityChart')?.getContext('2d');
 
-            if (!durationCtx || !qualityCtx) return;
+            if (!durationCtx || !qualityCtx || !regularityCtx) return;
 
             if (durationChartInstance) durationChartInstance.destroy();
             if (qualityChartInstance) qualityChartInstance.destroy();
+            if (regularityChartInstance) regularityChartInstance.destroy();
 
             durationChartInstance = new Chart(durationCtx, {
                 type: 'bar',
@@ -400,10 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     labels: currentSleepData.map(item => new Date(item.sleepDate).toLocaleDateString('pt-BR')),
                     datasets: [{
                         label: 'Duração do Sono (horas)',
-                        data: currentSleepData.map(item => {
-                            const [hours, minutes] = item.duration.split('h ').map(part => parseInt(part));
-                            return hours + (minutes / 60);
-                        }),
+                        data: currentSleepData.map(item => durationToNumeric(item.duration)),
                         backgroundColor: 'rgba(102, 126, 234, 0.7)',
                         borderColor: 'rgba(102, 126, 234, 1)',
                         borderWidth: 1
@@ -411,6 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     scales: {
                         y: {
                             beginAtZero: false,
@@ -439,6 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -455,7 +532,63 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            updateSummaryStats();
+            regularityChartInstance = new Chart(regularityCtx, {
+                type: 'line',
+                data: {
+                    labels: currentSleepData.map(item => new Date(item.sleepDate).toLocaleDateString('pt-BR')),
+                    datasets: [{
+                        label: 'Horário de Dormir',
+                        data: currentSleepData.map(item => timeToNumeric(item.bedtime)),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        fill: false,
+                        tension: 0.2
+                    }, {
+                        label: 'Horário de Acordar',
+                        data: currentSleepData.map(item => timeToNumeric(item.wakeup)),
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        fill: false,
+                        tension: 0.2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    const hours = Math.floor(value % 24);
+                                    const minutes = Math.round((value - Math.floor(value)) * 60);
+                                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Hora do Dia'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    const value = context.parsed.y;
+                                    const hours = Math.floor(value % 24);
+                                    const minutes = Math.round((value - Math.floor(value)) * 60);
+                                    label += `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         function populateTable(data) {
@@ -465,19 +598,17 @@ document.addEventListener('DOMContentLoaded', function() {
             tableBody.innerHTML = '';
             data.forEach(item => {
                 const row = document.createElement('tr');
-
                 let stars = '';
                 for (let i = 1; i <= 5; i++) {
                     stars += i <= item.quality ?
                         '<i class="fas fa-star" style="color: #ffc107;"></i>' :
                         '<i class="far fa-star" style="color: #ffc107;"></i>';
                 }
-
                 row.innerHTML = `
                     <td>${new Date(item.sleepDate).toLocaleDateString('pt-BR')}</td>
-                    <td>${item.bedtime}</td>
-                    <td>${item.wakeup}</td>
-                    <td>${item.duration}</td>
+                    <td>${item.bedtime || 'N/A'}</td>
+                    <td>${item.wakeup || 'N/A'}</td>
+                    <td>${item.duration || 'N/A'}</td>
                     <td>${stars}</td>
                     <td>
                         <button class="action-btn view-btn" data-id="${item._id}">
@@ -488,7 +619,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         </button>
                     </td>
                 `;
-
                 tableBody.appendChild(row);
             });
 
@@ -502,13 +632,12 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.edit-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
-                    showToast(`Funcionalidade de Editar para ID: ${id} será implementada em breve!`, false);
+                    window.location.href = `sleep-tracker.html?edit=${id}`;
                 });
             });
         }
 
         async function showDetails(id) {
-
             try {
                 const response = await authenticatedFetch(`${API_BASE_URL}/sleep/${id}`);
                 const record = await response.json();
@@ -516,18 +645,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     showToast(record.message || 'Erro ao carregar detalhes.', true);
                     return;
                 }
-
                 const getDicasIA = async (dadosDoSono) => {
                     try {
                         const response = await authenticatedFetch(`${API_BASE_URL}/sleep/dicas`, {
                             method: 'POST',
                             body: JSON.stringify(dadosDoSono),
                         });
-
                         if (!response.ok) {
                             throw new Error('Erro ao obter dicas da IA.');
                         }
-
                         const data = await response.json();
                         return data.dicas;
                     } catch (error) {
@@ -535,7 +661,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         return "Não foi possível gerar dicas de sono no momento. Tente novamente mais tarde.";
                     }
                 };
-
                 const dicas = await getDicasIA({
                     duration: record.duration,
                     quality: record.quality,
@@ -545,7 +670,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('modalBedtime').textContent = record.bedtime;
                 document.getElementById('modalWakeup').textContent = record.wakeup;
                 document.getElementById('modalDuration').textContent = record.duration;
-
                 const starsContainer = document.getElementById('modalQuality');
                 starsContainer.innerHTML = '';
                 for (let i = 1; i <= 5; i++) {
@@ -554,18 +678,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     star.style.color = '#ffc107';
                     starsContainer.appendChild(star);
                 }
-
                 document.getElementById('modalNotes').textContent = record.notes || 'Nenhuma observação registrada.';
-
                 const tipsContainer = document.getElementById('modalTipsContainer');
                 if (tipsContainer) {
                     tipsContainer.innerHTML = `<h5 style="margin-top: 20px;">Dicas da IA:</h5><p>${dicas.replace(/\n/g, '<br>')}</p>`;
                 }
 
+                // Listener ATUALIZADO para o botão de editar no modal
                 document.getElementById('editBtn').onclick = function() {
-
-                    showToast(`Funcionalidade de Editar para ID: ${id} será implementada em breve!`, false);
-                    closeModal();
+                    window.location.href = `sleep-tracker.html?edit=${id}`;
                 };
 
                 document.getElementById('deleteBtn').onclick = async function() {
@@ -574,9 +695,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         closeModal();
                     });
                 };
-
                 document.getElementById('detailModal').style.display = 'block';
-
             } catch (error) {
                 console.error('Erro ao buscar detalhes do registro:', error);
                 showToast('Erro ao carregar detalhes do registro.', true);
@@ -589,7 +708,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'DELETE'
                 });
                 const data = await response.json();
-
                 if (response.ok) {
                     showToast(data.message);
                     await fetchAndRenderSleepData(
@@ -605,63 +723,40 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        function updateCharts() {
-            if (durationChartInstance) {
-                durationChartInstance.data.labels = currentSleepData.map(item => new Date(item.sleepDate).toLocaleDateString('pt-BR'));
-                durationChartInstance.data.datasets[0].data = currentSleepData.map(item => {
-                    const [hours, minutes] = item.duration.split('h ').map(part => parseInt(part));
-                    return hours + (minutes / 60);
-                });
-                durationChartInstance.update();
-            }
-
-            if (qualityChartInstance) {
-                qualityChartInstance.data.labels = currentSleepData.map(item => new Date(item.sleepDate).toLocaleDateString('pt-BR'));
-                qualityChartInstance.data.datasets[0].data = currentSleepData.map(item => item.quality);
-                qualityChartInstance.update();
-            }
-            updateSummaryStats();
-        }
-
         function updateSummaryStats() {
             const avgDurationEl = document.getElementById('avgDuration');
             const avgQualityEl = document.getElementById('avgQuality');
             const bestDurationEl = document.getElementById('bestDuration');
             const consistencyEl = document.getElementById('consistency');
-
-            if (currentSleepData.length === 0) {
+            const validRecords = currentSleepData.filter(item => durationToNumeric(item.duration) !== null);
+            if (validRecords.length === 0) {
                 avgDurationEl.textContent = 'N/A';
                 avgQualityEl.textContent = 'N/A';
                 bestDurationEl.textContent = 'N/A';
-                consistencyEl.textContent = 'N/A';
+                consistencyEl.textContent = '0%';
                 return;
             }
-            const totalDurationMinutes = currentSleepData.reduce((sum, item) => {
-                const [hours, minutes] = item.duration.split('h ').map(part => parseInt(part));
-                return sum + (hours * 60) + minutes;
+            const totalDurationMinutes = validRecords.reduce((sum, item) => {
+                return sum + (durationToNumeric(item.duration) * 60);
             }, 0);
-            const avgMinutes = totalDurationMinutes / currentSleepData.length;
+            const avgMinutes = totalDurationMinutes / validRecords.length;
             const avgHours = Math.floor(avgMinutes / 60);
             const remainingMinutes = Math.round(avgMinutes % 60);
             avgDurationEl.textContent = `${avgHours}h ${remainingMinutes}m`;
-
-            const totalQuality = currentSleepData.reduce((sum, item) => sum + item.quality, 0);
-            avgQualityEl.textContent = (totalQuality / currentSleepData.length).toFixed(1);
-
-            const sortedByDuration = [...currentSleepData].sort((a, b) => {
-                const [aHrs, aMins] = a.duration.split('h ').map(part => parseInt(part));
-                const [bHrs, bMins] = b.duration.split('h ').map(part => parseInt(part));
-                return ((bHrs * 60) + bMins) - ((aHrs * 60) + aMins);
+            const totalQuality = validRecords.reduce((sum, item) => sum + item.quality, 0);
+            avgQualityEl.textContent = (totalQuality / validRecords.length).toFixed(1);
+            const sortedByDuration = [...validRecords].sort((a, b) => {
+                return durationToNumeric(b.duration) - durationToNumeric(a.duration);
             });
             bestDurationEl.textContent = sortedByDuration[0]?.duration || 'N/A';
-
             const targetMin = avgMinutes;
-            const consistentCount = currentSleepData.filter(item => {
-                const [hours, minutes] = item.duration.split('h ').map(part => parseInt(part));
-                const itemTotalMinutes = (hours * 60) + minutes;
-                return Math.abs(itemTotalMinutes - targetMin) <= 30;
+            const consistentCount = validRecords.filter(item => {
+                const itemTotalMinutes = durationToNumeric(item.duration) * 60;
+                const difference = Math.abs(itemTotalMinutes - targetMin);
+                return difference <= 60;
             }).length;
-            consistencyEl.textContent = `${((consistentCount / currentSleepData.length) * 100).toFixed(0)}%`;
+            const consistencyPercentage = (consistentCount / validRecords.length) * 100;
+            consistencyEl.textContent = `${consistencyPercentage.toFixed(0)}%`;
         }
 
         function closeModal() {
@@ -669,7 +764,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         document.querySelector('.close-modal')?.addEventListener('click', closeModal);
-
         window.addEventListener('click', function(event) {
             if (event.target === document.getElementById('detailModal')) {
                 closeModal();
@@ -679,17 +773,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('filterBtn')?.addEventListener('click', async function() {
             const startDate = $('#startDate').datepicker('getDate');
             const endDate = $('#endDate').datepicker('getDate');
-
             if (!startDate || !endDate) {
                 showToast('Por favor, selecione ambas as datas para filtrar.', true);
                 return;
             }
-
             if (startDate > endDate) {
                 showToast('A data inicial não pode ser maior que a data final.', true);
                 return;
             }
-
             await fetchAndRenderSleepData(startDate, endDate);
             showToast(`Filtro aplicado - ${currentSleepData.length} registros encontrados.`);
         });
@@ -698,28 +789,25 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 let url = `${API_BASE_URL}/sleep`;
                 if (startDate && endDate) {
-
                     url += `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
                 }
                 const response = await authenticatedFetch(url);
                 const data = await response.json();
-
                 if (response.ok) {
                     currentSleepData = data;
                     populateTable(currentSleepData);
                     initializeCharts();
+                    updateSummaryStats();
                 } else {
                     showToast(data.message || 'Erro ao carregar dados de sono.', true);
                 }
             } catch (error) {
                 console.error('Erro ao buscar e renderizar dados de sono:', error);
-
                 if (!error.message.includes('Não autorizado')) {
                     showToast('Erro de rede ou servidor ao carregar dados de sono.', true);
                 }
             }
         }
-
         fetchAndRenderSleepData(
             $('#startDate').datepicker('getDate'),
             $('#endDate').datepicker('getDate')
