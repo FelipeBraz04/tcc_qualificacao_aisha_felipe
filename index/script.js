@@ -812,4 +812,92 @@ document.addEventListener('DOMContentLoaded', function() {
             $('#endDate').datepicker('getDate')
         );
     }
+
+    if (document.getElementById('updateUsernameForm')) {
+        const usernameInput = document.getElementById('username');
+        const updateUsernameForm = document.getElementById('updateUsernameForm');
+        const updatePasswordForm = document.getElementById('updatePasswordForm');
+        const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+
+        usernameInput.value = localStorage.getItem('username') || '';
+
+        updateUsernameForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newUsername = usernameInput.value;
+            if (!newUsername) {
+                showToast('O nome de usuário não pode estar vazio.', true);
+                return;
+            }
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/users/profile`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ username: newUsername })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showToast('Nome de usuário atualizado com sucesso!');
+                    localStorage.setItem('username', data.username);
+                    document.getElementById('user-greeting').textContent = `Olá, ${data.username}!`;
+                } else {
+                    showToast(data.message || 'Erro ao atualizar nome.', true);
+                }
+            } catch (error) {
+                showToast('Erro de rede ao tentar atualizar o nome.', true);
+            }
+        });
+
+        updatePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                showToast('A nova senha e a confirmação não correspondem.', true);
+                return;
+            }
+            if (newPassword.length < 6) {
+                showToast('A nova senha deve ter pelo menos 6 caracteres.', true);
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/users/password`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showToast('Senha atualizada com sucesso!');
+                    updatePasswordForm.reset();
+                } else {
+                    showToast(data.message || 'Erro ao atualizar senha.', true);
+                }
+            } catch (error) {
+                showToast('Erro de rede ao tentar atualizar a senha.', true);
+            }
+        });
+
+        deleteAccountBtn.addEventListener('click', () => {
+            showConfirmationModal('Você tem certeza? Esta ação é irreversível e todos os seus dados serão perdidos.', async () => {
+                try {
+                    const response = await authenticatedFetch(`${API_BASE_URL}/users/profile`, {
+                        method: 'DELETE'
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        showToast('Conta excluída com sucesso. Você será desconectado.');
+                        localStorage.removeItem('jwtToken');
+                        localStorage.removeItem('username');
+                        setTimeout(() => window.location.href = 'index.html', 2000);
+                    } else {
+                        showToast(data.message || 'Erro ao excluir conta.', true);
+                    }
+                } catch (error) {
+                    showToast('Erro de rede ao tentar excluir a conta.', true);
+                }
+            });
+        });
+    }
+
 });
