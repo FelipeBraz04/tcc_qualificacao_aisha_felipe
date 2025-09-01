@@ -549,7 +549,7 @@ textarea {
 }
 
 .table-container {
-    overflow-x: auto; /* Permite rolagem horizontal em telas pequenas */
+    overflow-x: auto;
     margin-top: 20px;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -558,7 +558,7 @@ textarea {
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 600px; /* Garante que a tabela não fique muito espremida */
+    min-width: 600px;
 }
 
 th, td {
@@ -571,7 +571,7 @@ th {
     background-color: #f5f7fa;
     font-weight: 500;
     color: #555;
-    position: sticky; /* Mantém o cabeçalho da tabela visível ao rolar */
+    position: sticky;
     top: 0;
 }
 
@@ -598,7 +598,6 @@ tr:hover {
     background: #e6f0ff;
 }
 
-/* Modal Styles (para visualização de detalhes do sono) */
 .modal {
     display: none;
     position: fixed;
@@ -609,13 +608,13 @@ tr:hover {
     height: 100%;
     background-color: rgba(0,0,0,0.5);
     overflow: auto;
-    justify-content: center; /* Centraliza o modal horizontalmente */
-    align-items: center; /* Centraliza o modal verticalmente */
+    justify-content: center;
+    align-items: center;
 }
 
 .modal-content {
     background-color: #fff;
-    margin: 5% auto; /* Ajustado para melhor centralização com flexbox */
+    margin: 5% auto;
     padding: 25px;
     border-radius: 10px;
     width: 90%;
@@ -645,12 +644,12 @@ tr:hover {
     display: flex;
     gap: 20px;
     margin-bottom: 20px;
-    flex-wrap: wrap; /* Garante que os itens quebrem a linha em telas pequenas */
+    flex-wrap: wrap;
 }
 
 .modal-group {
     flex: 1;
-    min-width: 180px; /* Garante que os grupos não fiquem muito pequenos */
+    min-width: 180px;
 }
 
 .modal-value {
@@ -659,7 +658,7 @@ tr:hover {
     border-radius: 6px;
     margin-top: 8px;
     font-size: 15px;
-    word-wrap: break-word; /* Previne estouro de texto */
+    word-wrap: break-word;
 }
 
 .modal-notes {
@@ -669,7 +668,7 @@ tr:hover {
     margin-top: 8px;
     line-height: 1.6;
     min-height: 100px;
-    word-wrap: break-word; /* Previne estouro de texto */
+    word-wrap: break-word;
 }
 
 .modal-actions {
@@ -677,7 +676,7 @@ tr:hover {
     justify-content: flex-end;
     gap: 15px;
     margin-top: 25px;
-    flex-wrap: wrap; /* Permite que os botões quebrem a linha */
+    flex-wrap: wrap;
 }
 
 .modal-rating {
@@ -689,7 +688,6 @@ tr:hover {
 }
 
 
-/* Estilos de Botão Gerais */
 .btn-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -702,7 +700,7 @@ tr:hover {
     gap: 8px;
     transition: all 0.3s;
     font-weight: 500;
-    justify-content: center; /* Centraliza ícone e texto */
+    justify-content: center;
 }
 
 .btn-primary:hover {
@@ -719,7 +717,7 @@ tr:hover {
     cursor: pointer;
     transition: all 0.3s;
     font-weight: 500;
-    display: flex; /* Para alinhar ícone e texto */
+    display: flex;
     align-items: center;
     gap: 8px;
     justify-content: center;
@@ -746,10 +744,7 @@ tr:hover {
     background: #c0392b;
 }
 
-
-/* Responsive Styles (para todas as páginas) */
 @media (max-width: 992px) {
-    /* Layout do Dashboard */
     .dashboard-container {
         grid-template-columns: 1fr;
         grid-template-areas:
@@ -758,19 +753,18 @@ tr:hover {
     }
 
     .sidebar {
-        display: none; /* Esconde a sidebar em telas menores */
+        display: none;
     }
 
     .main-content {
         padding: 20px;
     }
 
-    /* Cabeçalho do Dashboard */
     .dashboard-header {
         flex-direction: column;
         padding: 15px;
         gap: 15px;
-        height: auto; /* Ajusta a altura conforme o conteúdo */
+        height: auto;
     }
 
     .header-left h1 {
@@ -779,7 +773,6 @@ tr:hover {
 }
 
 @media (max-width: 768px) {
-    /* Formulários e Modais */
     .form-row, .modal-row {
         flex-direction: column;
         gap: 15px;
@@ -798,7 +791,6 @@ tr:hover {
         justify-content: center;
     }
 
-    /* Registros Recentes */
     .record-item {
         flex-direction: column;
         align-items: flex-start;
@@ -806,23 +798,22 @@ tr:hover {
     }
 
     .record-actions {
-        align-self: flex-end; /* Move os botões de ação para o final */
+        align-self: flex-end;
     }
 
-    /* Cabeçalho de Dados */
     .data-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 15px; /* Ajusta o espaçamento */
+        gap: 15px;
     }
 
     .data-header h2 {
-        font-size: 1.5rem; /* Reduz o tamanho da fonte */
+        font-size: 1.5rem;
     }
 
     .date-filter {
         width: 100%;
-        flex-direction: column; /* Filtros um abaixo do outro */
+        flex-direction: column;
         gap: 10px;
     }
 
@@ -830,7 +821,6 @@ tr:hover {
         width: 100%;
     }
 
-    /* Conteúdo de Autenticação */
     .auth-container {
         padding: 20px;
         border-radius: 0;
@@ -871,4 +861,23 @@ tr:hover {
     .stat-item {
         padding: 15px;
     }
+}
+
+.settings-card {
+    max-width: 700px;
+    margin-bottom: 20px;
+}
+
+.settings-form .form-group {
+    max-width: 400px;
+    margin-bottom: 20px;
+}
+
+.danger-zone {
+    border-left: 4px solid #e74c3c;
+}
+
+.danger-zone p {
+    margin-bottom: 20px;
+    color: #555;
 }

@@ -684,7 +684,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     tipsContainer.innerHTML = `<h5 style="margin-top: 20px;">Dicas da IA:</h5><p>${dicas.replace(/\n/g, '<br>')}</p>`;
                 }
 
-                // Listener ATUALIZADO para o botão de editar no modal
                 document.getElementById('editBtn').onclick = function() {
                     window.location.href = `sleep-tracker.html?edit=${id}`;
                 };

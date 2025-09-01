@@ -227,6 +227,51 @@ app.post('/api/sleep/dicas', protect, async (req, res) => {
         res.status(500).json({ message: 'Erro interno no servidor ao gerar as dicas.' });
     }
 });
+
+app.put('/api/users/profile', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.user);
+        if (user) {
+            user.username = req.body.username || user.username;
+            const updatedUser = await user.save();
+            res.json({
+                id: updatedUser._id,
+                username: updatedUser.username,
+                email: updatedUser.email,
+            });
+        } else {
+            res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor ao atualizar perfil.' });
+    }
+});
+
+app.put('/api/users/password', protect, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    try {
+        const user = await User.findById(req.user);
+        if (user && (await user.matchPassword(currentPassword))) {
+            user.password = newPassword; 
+            await user.save();
+            res.json({ message: 'Senha atualizada com sucesso' });
+        } else {
+            res.status(401).json({ message: 'Senha atual inválida' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor ao atualizar senha.' });
+    }
+});
+app.delete('/api/users/profile', protect, async (req, res) => {
+    try {
+        await SleepData.deleteMany({ user: req.user });
+        await User.findByIdAndDelete(req.user);
+        res.json({ message: 'Conta e todos os dados associados foram excluídos com sucesso' });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor ao excluir a conta.' });
+    }
+
+});
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
