@@ -212,7 +212,7 @@ app.post('/api/sleep/dicas', protect, async (req, res) => {
                     Gere 3 dicas práticas e personalizadas para melhorar o sono, focando em higiene do sono e rotinas saudáveis. As dicas devem ser diretas e fáceis de seguir. Não forneça diagnósticos médicos. Formate a resposta como uma lista numerada.
                 `
             }],
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o-mini",
         });
 
         const dicasDaIA = completion.choices[0].message.content.trim();
@@ -271,6 +271,50 @@ app.delete('/api/users/profile', protect, async (req, res) => {
         res.status(500).json({ message: 'Erro no servidor ao excluir a conta.' });
     }
 
+});
+
+app.post('/api/ai/sleep-coach', protect, async (req, res) => {
+    const { usualBedtime, timeToSleep, wakeUps, feeling, habits, mainGoal } = req.body;
+
+    if (!mainGoal) {
+        return res.status(400).json({ message: 'O objetivo principal é necessário.' });
+    }
+
+    const prompt = `
+        Você é um especialista em bem-estar e higiene do sono. Analise os seguintes dados de um usuário e forneça conselhos práticos, empáticos e personalizados.
+
+        Dados do Usuário:
+        - Horário que costuma ir para a cama: ${usualBedtime}
+        - Tempo para adormecer: ${timeToSleep}
+        - Acorda durante a noite: ${wakeUps}
+        - Como se sente ao acordar: ${feeling}
+        - Usa telas antes de dormir: ${habits}
+        - Principal problema/objetivo: "${mainGoal}"
+
+        Com base nesses dados, gere uma resposta com a seguinte estrutura:
+        1.  **Pequena Análise:** Comece com uma breve análise empática da situação do usuário (1-2 frases).
+        2.  **Dicas Acionáveis:** Forneça de 3 a 5 dicas práticas e numeradas, diretamente relacionadas aos problemas apontados (especialmente o objetivo principal). As dicas devem ser claras e fáceis de seguir.
+        3.  **Encorajamento Final:** Termine com uma frase positiva de encorajamento.
+
+        Não atue como um médico e não forneça diagnósticos. Mantenha o tom amigável e de apoio.
+    `;
+
+    try {
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{
+                role: "user",
+                content: prompt
+            }],
+        });
+
+        const advice = completion.choices[0].message.content.trim();
+        res.status(200).json({ advice });
+
+    } catch (error) {
+        console.error("Erro ao gerar dicas do coach de sono:", error);
+        res.status(500).json({ message: 'Erro ao se comunicar com a IA.' });
+    }
 });
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);

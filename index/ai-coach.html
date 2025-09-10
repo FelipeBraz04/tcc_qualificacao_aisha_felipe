@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coach de Sono IA - SleepTracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1><i class="fas fa-moon"></i> SleepTracker</h1>
+            </div>
+            <div class="header-right">
+                <span id="user-greeting">Olá, Usuário!</span>
+                <button id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </header>
+
+ <nav class="sidebar">
+    <ul>
+        <li><a href="sleep-tracker.html"><i class="fas fa-home"></i> Home</a></li>
+        <li><a href="sleep-data.html"><i class="fas fa-bed"></i> Meu Sono</a></li>
+        <li class="active"><a href="ai-coach.html"><i class="fas fa-brain"></i> Formulário</a></li>
+        <li><a href="settings.html"><i class="fas fa-cog"></i> Configurações</a></li>
+    </ul>
+</nav>
+
+        <main class="main-content">
+            <h2><i class="fas fa-brain"></i> Formulário Personalizado</h2>
+            <p style="margin-bottom: 20px; max-width: 800px;">Responda às perguntas abaixo para receber uma análise e dicas personalizadas da nossa inteligência artificial para melhorar a qualidade do seu sono.</p>
+
+            <div class="data-card">
+                <form id="aiCoachForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="usualBedtime">A que horas você costuma ir para a cama?</label>
+                            <input type="time" id="usualBedtime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="timeToSleep">Quanto tempo, em média, você leva para adormecer?</label>
+                            <select id="timeToSleep" class="form-control" required>
+                                <option value="menos de 15 minutos">Menos de 15 minutos</option>
+                                <option value="15-30 minutos">15-30 minutos</option>
+                                <option value="30-60 minutos">30-60 minutos</option>
+                                <option value="mais de 1 hora">Mais de 1 hora</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="wakeUps">Quantas vezes você acorda durante a noite?</label>
+                            <select id="wakeUps" class="form-control" required>
+                                <option value="nenhuma">Nenhuma vez</option>
+                                <option value="1-2 vezes">1 a 2 vezes</option>
+                                <option value="3-4 vezes">3 a 4 vezes</option>
+                                <option value="5 ou mais vezes">5 ou mais vezes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="feeling">Como você se sente ao acordar?</label>
+                            <select id="feeling" class="form-control" required>
+                                <option value="bem descansado e com energia">Bem descansado e com energia</option>
+                                <option value="um pouco cansado">Um pouco cansado</option>
+                                <option value="muito cansado, como se não tivesse dormido">Muito cansado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="habits">Você tem o hábito de usar telas (celular, TV) na cama antes de dormir?</label>
+                        <select id="habits" class="form-control" required>
+                            <option value="sim">Sim</option>
+                            <option value="não">Não</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mainGoal">Qual é o seu principal objetivo ou problema relacionado ao sono?</label>
+                        <textarea id="mainGoal" placeholder="Ex: Demoro muito para pegar no sono, acordo muito cansado, etc." required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary" id="getAdviceBtn">
+                            <i class="fas fa-magic"></i> Gerar Dicas
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="aiResponseContainer" style="display: none; margin-top: 30px;">
+                <div class="data-card">
+                    <h3><i class="fas fa-robot"></i> Análise da IA</h3>
+                    <div id="loadingIndicator" style="display: none; text-align: center; padding: 20px;">
+                        <p>Analisando seus dados e preparando suas dicas...</p>
+                        </div>
+                    <div id="aiResponse" style="line-height: 1.8; white-space: pre-wrap;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="script.js"></script>
+</body>
+</html>

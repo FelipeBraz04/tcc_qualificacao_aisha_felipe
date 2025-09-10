@@ -193,19 +193,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function initializeDatepickers() {
+function initializeDatepickers() {
         if ($.fn.datepicker) {
             $('.datepicker').datepicker({
                 format: 'dd/mm/yyyy',
                 language: 'pt-BR',
                 autoclose: true,
-                todayHighlight: true
+                todayHighlight: true,
+                container: '.main-content'
             });
         } else {
-            console.warn("jQuery Datepicker não encontrado. Verifique se os scripts estão carregados.");
+            console.warn("jQuery Datepicker não encxontrado. Verifique se os scripts estão carregados.");
         }
     }
-    
+
     function setRating(rating) {
         const stars = document.querySelectorAll('.rating-stars i');
         const hiddenInput = document.getElementById('sleepQuality');
@@ -897,6 +898,58 @@ document.addEventListener('DOMContentLoaded', function() {
                     showToast('Erro de rede ao tentar excluir a conta.', true);
                 }
             });
+        });
+    }
+
+    if (document.getElementById('aiCoachForm')) {
+        const aiCoachForm = document.getElementById('aiCoachForm');
+        const getAdviceBtn = document.getElementById('getAdviceBtn');
+        const responseContainer = document.getElementById('aiResponseContainer');
+        const aiResponseDiv = document.getElementById('aiResponse');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+
+        aiCoachForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                usualBedtime: document.getElementById('usualBedtime').value,
+                timeToSleep: document.getElementById('timeToSleep').value,
+                wakeUps: document.getElementById('wakeUps').value,
+                feeling: document.getElementById('feeling').value,
+                habits: document.getElementById('habits').value,
+                mainGoal: document.getElementById('mainGoal').value
+            };
+
+            responseContainer.style.display = 'block';
+            loadingIndicator.style.display = 'block';
+            aiResponseDiv.innerHTML = '';
+            getAdviceBtn.disabled = true;
+            getAdviceBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analisando...';
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE_URL}/ai/sleep-coach`, {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    aiResponseDiv.innerText = data.advice;
+                } else {
+                    showToast(data.message || 'Ocorreu um erro.', true);
+                    aiResponseDiv.innerText = 'Não foi possível gerar suas dicas no momento. Tente novamente mais tarde.';
+                }
+
+            } catch (error) {
+                console.error("Erro no formulário do Coach IA:", error);
+                showToast('Erro de rede. Verifique sua conexão.', true);
+                aiResponseDiv.innerText = 'Ocorreu um erro de conexão. Por favor, tente novamente.';
+            } finally {
+                loadingIndicator.style.display = 'none';
+                getAdviceBtn.disabled = false;
+                getAdviceBtn.innerHTML = '<i class="fas fa-magic"></i> Gerar Dicas';
+            }
         });
     }
 
